@@ -28,3 +28,7 @@ Thumbs.db
 *.log
 logs/
 npm-debug.log*
+
+# Built SPA (generated into API)
+src/BereansPath.Api/wwwroot/
+publish/

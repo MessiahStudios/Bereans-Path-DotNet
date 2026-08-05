@@ -6,7 +6,6 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { deleteSavedChurch, findNearbyChurches, listSavedChurches, saveChurch } from '../api'
 
-// Fix default marker paths under Vite
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
@@ -19,6 +18,8 @@ const status = ref('')
 const error = ref('')
 const churches = ref([])
 const saved = ref([])
+const searching = ref(false)
+const mapReady = ref(false)
 let map
 let layerGroup
 
@@ -33,18 +34,22 @@ function ensureMap(lat, lon) {
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map)
     layerGroup = L.layerGroup().addTo(map)
+    mapReady.value = true
   } else {
     map.setView([lat, lon], 12)
   }
+  setTimeout(() => map?.invalidateSize(), 50)
 }
 
 async function locateAndSearch() {
   error.value = ''
   status.value = 'Getting your location…'
+  searching.value = true
 
   if (!navigator.geolocation) {
     error.value = 'Geolocation is not supported in this browser.'
     status.value = ''
+    searching.value = false
     return
   }
 
@@ -63,14 +68,25 @@ async function locateAndSearch() {
           .addTo(layerGroup)
           .bindPopup(church.name)
       })
-      status.value = `Found ${churches.value.length} churches nearby.`
+      status.value = churches.value.length
+        ? `Found ${churches.value.length} churches nearby.`
+        : 'No churches found in range. Try again later.'
     } catch (err) {
       error.value = err.message
       status.value = ''
+    } finally {
+      searching.value = false
     }
   }, (geoError) => {
-    error.value = geoError.message || 'Unable to get location.'
+    const denied = geoError.code === geoError.PERMISSION_DENIED
+    error.value = denied
+      ? 'Location permission is blocked. Allow location for this site, then try again.'
+      : (geoError.message || 'Unable to get location.')
     status.value = ''
+    searching.value = false
+  }, {
+    enableHighAccuracy: false,
+    timeout: 15000,
   })
 }
 
@@ -95,6 +111,11 @@ async function onRemoveSaved(id) {
   await refreshSaved()
 }
 
+function focusChurch(church) {
+  if (!map) return
+  map.setView([church.latitude, church.longitude], 15)
+}
+
 onMounted(async () => {
   try {
     await refreshSaved()
@@ -115,30 +136,33 @@ onBeforeUnmount(() => {
   <section class="panel">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
       <div>
-        <h1 class="h4 mb-1">Church finder</h1>
-        <p class="muted mb-0">Uses your location and OpenStreetMap Overpass via the API.</p>
+        <h2 class="h4 mb-1">Church finder</h2>
+        <p class="muted mb-0">Find Christian places of worship near you.</p>
       </div>
-      <button class="btn btn-primary" type="button" @click="locateAndSearch">
-        Find near me
+      <button class="btn btn-primary" type="button" :disabled="searching" @click="locateAndSearch">
+        {{ searching ? 'Searching…' : 'Find near me' }}
       </button>
     </div>
 
     <p v-if="status" class="text-secondary">{{ status }}</p>
     <div v-if="error" class="alert alert-warning py-2">{{ error }}</div>
 
-    <div ref="mapEl" class="map-frame mb-3"></div>
+    <div class="map-wrap mb-3">
+      <div ref="mapEl" class="map-frame"></div>
+      <div v-if="!mapReady" class="map-placeholder">
+        Tap <strong>Find near me</strong> to load the map around your location.
+      </div>
+    </div>
 
     <div class="row g-3">
       <div class="col-lg-7">
-        <h2 class="h6">Nearby results</h2>
+        <h3 class="h6">Nearby results</h3>
         <div v-if="!churches.length" class="muted">Run a search to see churches here.</div>
-        <ul v-else class="list-group">
-          <li
-            v-for="church in churches.slice(0, 25)"
-            :key="church.osmId"
-            class="list-group-item d-flex justify-content-between align-items-center"
-          >
-            <span>{{ church.name }}</span>
+        <ul v-else class="item-list">
+          <li v-for="church in churches.slice(0, 25)" :key="church.osmId" class="item-list-row">
+            <button class="item-list-main" type="button" @click="focusChurch(church)">
+              {{ church.name }}
+            </button>
             <button class="btn btn-sm btn-outline-primary" type="button" @click="onSave(church)">
               Save
             </button>
@@ -146,14 +170,10 @@ onBeforeUnmount(() => {
         </ul>
       </div>
       <div class="col-lg-5">
-        <h2 class="h6">Saved churches</h2>
+        <h3 class="h6">Saved churches</h3>
         <div v-if="!saved.length" class="muted">None saved yet.</div>
-        <ul v-else class="list-group">
-          <li
-            v-for="church in saved"
-            :key="church.id"
-            class="list-group-item d-flex justify-content-between align-items-center"
-          >
+        <ul v-else class="item-list">
+          <li v-for="church in saved" :key="church.id" class="item-list-row">
             <span>{{ church.name }}</span>
             <button class="btn btn-sm btn-outline-danger" type="button" @click="onRemoveSaved(church.id)">
               Remove

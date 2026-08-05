@@ -2,7 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BereansPath.Api.Dtos;
 
-public record BookmarkDto(int Id, string Reference, string? PassageText, string? Note, DateTime CreatedAt);
+public record MemoirDto(int Id, string NoteText, DateTime ArchivedAt);
+
+public record BookmarkDto(
+    int Id,
+    string Reference,
+    string? PassageText,
+    string? Note,
+    DateTime CreatedAt,
+    IReadOnlyList<MemoirDto> Memoirs);
 
 public class CreateBookmarkRequest
 {
@@ -12,6 +20,12 @@ public class CreateBookmarkRequest
     [MaxLength(8000)]
     public string? PassageText { get; set; }
 
+    [MaxLength(2000)]
+    public string? Note { get; set; }
+}
+
+public class UpdateBookmarkRequest
+{
     [MaxLength(2000)]
     public string? Note { get; set; }
 }

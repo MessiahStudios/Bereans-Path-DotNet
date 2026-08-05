@@ -52,7 +52,22 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
-    logStore.Write("INFO", "Startup", "Database EnsureCreated completed");
+    // EnsureCreated won't add new tables to an existing SQLite file — create memoirs if missing.
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "BookmarkNoteMemoirs" (
+            "Id" INTEGER NOT NULL CONSTRAINT "PK_BookmarkNoteMemoirs" PRIMARY KEY AUTOINCREMENT,
+            "BookmarkId" INTEGER NOT NULL,
+            "NoteText" TEXT NOT NULL,
+            "ArchivedAt" TEXT NOT NULL,
+            CONSTRAINT "FK_BookmarkNoteMemoirs_Bookmarks_BookmarkId"
+                FOREIGN KEY ("BookmarkId") REFERENCES "Bookmarks" ("Id") ON DELETE CASCADE
+        );
+        """);
+    db.Database.ExecuteSqlRaw("""
+        CREATE INDEX IF NOT EXISTS "IX_BookmarkNoteMemoirs_BookmarkId"
+        ON "BookmarkNoteMemoirs" ("BookmarkId");
+        """);
+    logStore.Write("INFO", "Startup", "Database ready (including note memoirs)");
 }
 
 if (app.Environment.IsDevelopment())
@@ -63,7 +78,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("VueDev");
 app.UseMiddleware<RequestLoggingMiddleware>();
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapControllers();
+
+// SPA fallback for product/single-host mode (Vue built into wwwroot)
+app.MapFallbackToFile("index.html");
 
 app.Lifetime.ApplicationStarted.Register(() =>
     logStore.Write("INFO", "Startup", "Application started — open /logs in the Vue app or GET /api/diagnostics/logs"));

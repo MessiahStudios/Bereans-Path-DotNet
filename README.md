@@ -1,79 +1,51 @@
-# Bereans Path (.NET rewrite)
+# Bereans Path
 
-Bible study + church finder rebuilt with **Vue 3**, **ASP.NET Core**, **EF Core**, and **Bootstrap** — portfolio piece aligned with church/ministry product work (e.g. Rock RMS stack family).
+A product-minded Bible study + church finder app: **Vue 3** frontend, **ASP.NET Core** API, **EF Core**, themes, and PWA install support.
 
-## Structure
+**Repo:** https://github.com/MessiahStudios/Bereans-Path-DotNet
 
-```
-src/
-  BereansPath.Api/     ASP.NET Core Web API (C#, EF, REST)
-  bereans-path.web/    Vue 3 + Vite frontend
-ROADMAP.md
-```
+## Features
 
-## Prerequisites
+- Scripture reader (ESV API proxied server-side)
+- Bookmarks with optional notes (EF Core)
+- Nearby church finder (OpenStreetMap Overpass from the browser — no API key)
+- Resources for new believers (ElevenLabs audio + study methodology + trusted links)
+- Theme switcher (Faith matches Messiah Studios brand, plus more)
+- Diagnostics / live logs
+- PWA-ready build
+- Single-host product publish (API serves the Vue app from `wwwroot`)
 
-- .NET 8 SDK
-- Node.js 20+
-- Free [ESV API key](https://api.esv.org/) (optional for UI shell; required for Scripture fetch)
-
-## Configure ESV key (API)
+## Quick start (development)
 
 ```powershell
+# Terminal 1 — API (http://localhost:5068)
 cd src/BereansPath.Api
-dotnet user-secrets init
-dotnet user-secrets set "ESV_API_KEY" "your-key-here"
-```
-
-Or set environment variable `ESV_API_KEY`.
-
-## Run locally
-
-Terminal 1 — API (Swagger at http://localhost:5068/swagger):
-
-```powershell
-cd src/BereansPath.Api
+dotnet user-secrets set "ESV_API_KEY" "your-key"
 dotnet run --launch-profile http
-```
 
-Terminal 2 — Vue (http://localhost:5173):
-
-```powershell
+# Terminal 2 — Vue (http://localhost:5173)
 cd src/bereans-path.web
 npm install
 npm run dev
 ```
 
-## Database
+## Product build (one host)
 
-Default: **SQLite** file `bereans.db` (created on first run).
+```powershell
+cd src/bereans-path.web
+npm install
+npm run build
 
-To use **SQL Server** (LocalDB example), set in `appsettings.json` or user secrets:
-
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=BereansPath;Trusted_Connection=True;TrustServerCertificate=True"
-}
+cd ../BereansPath.Api
+dotnet run --launch-profile http
 ```
 
-## API surface
-
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/api/esv?q=John+3:16` | ESV passage proxy |
-| GET/POST/DELETE | `/api/bookmarks` | Bookmark CRUD |
-| GET | `/api/churches/nearby?lat=&lon=` | Nearby churches (Overpass) |
-| GET/POST/DELETE | `/api/churches/saved` | Saved churches |
-| GET | `/api/diagnostics/health` | Env + whether ESV key is set |
-| GET | `/api/diagnostics/logs` | Recent API log lines |
-
-Vue **Logs** page: http://localhost:5173/logs (auto-refresh).  
-Log file on disk: `src/BereansPath.Api/logs/bereans-api.log`
+Open http://localhost:5068 — full UI + API together.
 
 ## Azure
 
-Do this **after** local flows work — see `ROADMAP.md` Phase 5. Not required for a GitHub portfolio link.
+See [`docs/AZURE.md`](docs/AZURE.md).
 
-## License / reference
+## Roadmap
 
-Original Flask PWA lives separately under `Bereans-Path`. This rewrite reimplements behavior; it is not a line-by-line port.
+See [`ROADMAP.md`](ROADMAP.md) — product-ready track (themes → PWA → live URL).

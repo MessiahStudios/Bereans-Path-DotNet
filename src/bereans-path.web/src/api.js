@@ -50,17 +50,55 @@ export function createBookmark(payload) {
   })
 }
 
+export function updateBookmark(id, payload) {
+  return request(`/api/bookmarks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function deleteBookmark(id) {
   return request(`/api/bookmarks/${id}`, { method: 'DELETE' })
 }
 
-export function findNearbyChurches(lat, lon, radiusMeters = 50000) {
-  const params = new URLSearchParams({
-    lat: String(lat),
-    lon: String(lon),
-    radiusMeters: String(radiusMeters),
-  })
-  return request(`/api/churches/nearby?${params.toString()}`)
+export async function findNearbyChurches(lat, lon, radiusMeters = 50000) {
+  // Public Overpass API — no secret key (matches original Flask Bereans Path).
+  const clamped = Math.min(50000, Math.max(1000, radiusMeters))
+  const query = `
+    [out:json][timeout:25];
+    (
+      node["amenity"="place_of_worship"]["religion"="christian"](around:${clamped},${lat},${lon});
+      way["amenity"="place_of_worship"]["religion"="christian"](around:${clamped},${lat},${lon});
+      relation["amenity"="place_of_worship"]["religion"="christian"](around:${clamped},${lat},${lon});
+    );
+    out center;
+  `
+
+  const response = await fetch(
+    `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+  )
+
+  if (!response.ok) {
+    throw new Error('Church search provider failed. Try again in a moment.')
+  }
+
+  const data = await response.json()
+  const results = []
+
+  for (const element of data.elements ?? []) {
+    const latitude = element.lat ?? element.center?.lat
+    const longitude = element.lon ?? element.center?.lon
+    if (latitude == null || longitude == null) continue
+
+    results.push({
+      name: element.tags?.name || 'Church',
+      latitude,
+      longitude,
+      osmId: `${element.type}/${element.id}`,
+    })
+  }
+
+  return results
 }
 
 export function listSavedChurches() {

@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Bookmark> Bookmarks => Set<Bookmark>();
     public DbSet<SavedChurch> SavedChurches => Set<SavedChurch>();
+    public DbSet<BookmarkNoteMemoir> BookmarkNoteMemoirs => Set<BookmarkNoteMemoir>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -15,6 +16,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(b => b.Reference).HasMaxLength(200).IsRequired();
             entity.Property(b => b.PassageText).HasMaxLength(8000);
             entity.Property(b => b.Note).HasMaxLength(2000);
+            entity.HasMany(b => b.Memoirs)
+                .WithOne(m => m.Bookmark)
+                .HasForeignKey(m => m.BookmarkId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BookmarkNoteMemoir>(entity =>
+        {
+            entity.Property(m => m.NoteText).HasMaxLength(2000).IsRequired();
+            entity.HasIndex(m => m.BookmarkId);
         });
 
         modelBuilder.Entity<SavedChurch>(entity =>
