@@ -183,7 +183,7 @@ onUnmounted(() => {
 
     <section class="panel">
       <h3 class="h5 mb-2">About</h3>
-      <p class="mb-1">Bereans Path — scripture reading, bookmarks, and church finder.</p>
+      <p class="mb-1">Bereans Path — stay rooted in Scripture and walk with a church that does the same.</p>
       <p class="muted mb-0">Built by Messiah Studios · Vue 3 + ASP.NET Core</p>
     </section>
   </div>

@@ -1,7 +1,9 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { createBookmark, fetchPassage } from '../api'
 import { BIBLE_BOOKS, dailyVerseReference } from '../bible'
+import { PATH_TAGLINE } from '../data/pathCopy'
 
 const books = Object.keys(BIBLE_BOOKS)
 const book = ref('John')
@@ -9,19 +11,36 @@ const chapter = ref(3)
 const status = ref('')
 const error = ref('')
 const passageText = ref('')
-const activeReference = ref('')
+const loadedBook = ref('')
+const loadedChapter = ref(null)
+const loadedReference = ref('')
 const note = ref('')
 const saving = ref(false)
+const loading = ref(false)
 
 const chapters = computed(() => {
   const count = BIBLE_BOOKS[book.value] ?? 1
   return Array.from({ length: count }, (_, i) => i + 1)
 })
 
+/** Passage is ready only after a successful Read for the current selection. */
+const isReady = computed(
+  () =>
+    Boolean(passageText.value) &&
+    loadedBook.value === book.value &&
+    loadedChapter.value === chapter.value,
+)
+
+const selectionChanged = computed(
+  () =>
+    Boolean(loadedReference.value) &&
+    (loadedBook.value !== book.value || loadedChapter.value !== chapter.value),
+)
+
 const esvAudioSrc = computed(() => {
-  if (!passageText.value) return ''
-  const formattedBook = book.value.replace(/\s+/g, '+')
-  return `https://www.esv.org/audio-player/${formattedBook}+${chapter.value}/`
+  if (!isReady.value || !loadedBook.value || !loadedChapter.value) return ''
+  const formattedBook = loadedBook.value.replace(/\s+/g, '+')
+  return `https://www.esv.org/audio-player/${formattedBook}+${loadedChapter.value}/`
 })
 
 watch(book, () => {
@@ -29,48 +48,72 @@ watch(book, () => {
   if (chapter.value > max) chapter.value = 1
 })
 
-async function loadPassage(reference) {
+function clearLoaded() {
+  passageText.value = ''
+  loadedBook.value = ''
+  loadedChapter.value = null
+  loadedReference.value = ''
+  note.value = ''
+}
+
+async function loadPassage(reference, { bookName, chapterNum } = {}) {
   error.value = ''
   status.value = 'Loading passage…'
-  activeReference.value = reference
+  loading.value = true
+  note.value = ''
   try {
     const data = await fetchPassage(reference)
-    passageText.value = Array.isArray(data?.passages) ? data.passages.join('\n\n') : ''
-    if (!passageText.value) {
+    const text = Array.isArray(data?.passages) ? data.passages.join('\n\n') : ''
+    if (!text) {
       throw new Error('No passage text returned. Check ESV_API_KEY on the API.')
     }
+
+    passageText.value = text
+    loadedReference.value = reference
+    loadedBook.value = bookName ?? book.value
+    loadedChapter.value = chapterNum ?? chapter.value
+    // Keep selectors in sync with what was loaded (daily verse may set verse-level refs).
+    book.value = loadedBook.value
+    chapter.value = loadedChapter.value
     status.value = ''
   } catch (err) {
-    passageText.value = ''
+    clearLoaded()
     error.value = err.message
     status.value = ''
+  } finally {
+    loading.value = false
   }
 }
 
-async function onSearch() {
-  await loadPassage(`${book.value} ${chapter.value}`)
+async function onRead() {
+  await loadPassage(`${book.value} ${chapter.value}`, {
+    bookName: book.value,
+    chapterNum: chapter.value,
+  })
 }
 
 async function onDaily() {
   const reference = dailyVerseReference()
   const bookName = books.find((name) => reference.startsWith(name)) || 'John'
-  book.value = bookName
   const chapterMatch = reference.slice(bookName.length).trim().match(/^(\d+)/)
-  if (chapterMatch) chapter.value = Number(chapterMatch[1])
-  await loadPassage(reference)
+  const chapterNum = chapterMatch ? Number(chapterMatch[1]) : 1
+  book.value = bookName
+  chapter.value = chapterNum
+  // Load the full chapter so audio + reader stay on the same book/chapter.
+  await loadPassage(`${bookName} ${chapterNum}`, { bookName, chapterNum })
 }
 
 async function onBookmark() {
-  if (!activeReference.value || !passageText.value) return
+  if (!isReady.value) return
   saving.value = true
   error.value = ''
   try {
     await createBookmark({
-      reference: activeReference.value,
+      reference: loadedReference.value,
       passageText: passageText.value.slice(0, 4000),
       note: note.value.trim(),
     })
-    status.value = 'Saved to bookmarks.'
+    status.value = `Saved ${loadedReference.value} to bookmarks.`
     note.value = ''
   } catch (err) {
     error.value = err.message
@@ -78,81 +121,141 @@ async function onBookmark() {
     saving.value = false
   }
 }
-
-onMounted(() => {
-  onDaily()
-})
 </script>
 
 <template>
-  <section class="panel">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-      <div>
-        <h2 class="h4 mb-1">Scripture reader</h2>
-        <p class="muted mb-0">Read the ESV and save passages that matter to you.</p>
-      </div>
-      <button class="btn btn-outline-secondary btn-sm" type="button" @click="onDaily">
-        Daily verse
-      </button>
-    </div>
+  <div class="d-grid gap-3">
+    <aside class="path-strip">
+      <p class="mb-1">{{ PATH_TAGLINE }}</p>
+      <RouterLink class="path-strip-link" to="/path">Why Bereans Path exists →</RouterLink>
+    </aside>
 
-    <form class="row g-2 align-items-end mb-3" @submit.prevent="onSearch">
-      <div class="col-sm-6 col-md-5">
-        <label class="form-label">Book</label>
-        <select v-model="book" class="form-select">
-          <option v-for="name in books" :key="name" :value="name">{{ name }}</option>
-        </select>
-      </div>
-      <div class="col-6 col-md-3">
-        <label class="form-label">Chapter</label>
-        <select v-model.number="chapter" class="form-select">
-          <option v-for="n in chapters" :key="n" :value="n">{{ n }}</option>
-        </select>
-      </div>
-      <div class="col-12 col-md-4 reader-actions d-flex gap-2">
-        <button class="btn btn-primary flex-fill" type="submit">Read</button>
-        <button
-          class="btn btn-outline-primary"
-          type="button"
-          :disabled="saving || !passageText"
-          @click="onBookmark"
-        >
-          Bookmark
+    <section class="panel">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+          <h2 class="h4 mb-1">Scripture reader</h2>
+          <p class="muted mb-0">Choose a book and chapter, then Read — audio, notes, and bookmark unlock together.</p>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" type="button" :disabled="loading" @click="onDaily">
+          Daily chapter
         </button>
       </div>
-    </form>
 
-    <div class="mb-3">
-      <label class="form-label">Optional note for bookmark</label>
-      <input
-        v-model="note"
-        class="form-control"
-        type="text"
-        maxlength="500"
-        placeholder="Why this passage matters to you…"
-      />
-    </div>
+      <form class="row g-2 align-items-end mb-3" @submit.prevent="onRead">
+        <div class="col-sm-6 col-md-5">
+          <label class="form-label" for="reader-book">Book</label>
+          <select id="reader-book" v-model="book" class="form-select" :disabled="loading">
+            <option v-for="name in books" :key="name" :value="name">{{ name }}</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="reader-chapter">Chapter</label>
+          <select id="reader-chapter" v-model.number="chapter" class="form-select" :disabled="loading">
+            <option v-for="n in chapters" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-4 reader-actions">
+          <button class="btn btn-primary w-100" type="submit" :disabled="loading">
+            {{ loading ? 'Reading…' : 'Read' }}
+          </button>
+        </div>
+      </form>
 
-    <p v-if="status" class="text-secondary mb-2">{{ status }}</p>
-    <div v-if="error" class="alert alert-warning py-2">{{ error }}</div>
+      <p v-if="selectionChanged" class="reader-hint mb-3">
+        Selection changed. Tap <strong>Read</strong> to open {{ book }} {{ chapter }}.
+      </p>
 
-    <article v-if="passageText">
-      <h3 class="h5">{{ activeReference }}</h3>
-      <div v-if="esvAudioSrc" class="esv-audio mb-3">
-        <p class="small muted mb-2">Listen to this chapter (ESV audio)</p>
-        <iframe
-          :src="esvAudioSrc"
-          title="ESV chapter audio"
-          class="esv-audio-frame"
-          loading="lazy"
-        />
+      <div v-if="!loadedReference && !loading && !error" class="reader-empty mb-0">
+        Pick a book and chapter above, then tap <strong>Read</strong> to listen, take notes, and bookmark.
       </div>
-      <div class="passage-text">{{ passageText }}</div>
-    </article>
-  </section>
+
+      <p v-if="status" class="text-secondary mb-2">{{ status }}</p>
+      <div v-if="error" class="alert alert-warning py-2 mb-0">{{ error }}</div>
+
+      <article v-if="isReady" class="reader-ready">
+        <h3 class="h5 mb-3">{{ loadedBook }} {{ loadedChapter }}</h3>
+
+        <div class="esv-audio mb-3">
+          <p class="small muted mb-2">Listen · {{ loadedBook }} {{ loadedChapter }} (ESV audio)</p>
+          <iframe
+            :key="esvAudioSrc"
+            :src="esvAudioSrc"
+            :title="`ESV audio for ${loadedBook} ${loadedChapter}`"
+            class="esv-audio-frame"
+            loading="lazy"
+          />
+        </div>
+
+        <div class="passage-text mb-3">{{ passageText }}</div>
+
+        <div class="reader-capture">
+          <label class="form-label" for="reader-note">Note for this chapter</label>
+          <input
+            id="reader-note"
+            v-model="note"
+            class="form-control mb-2"
+            type="text"
+            maxlength="500"
+            placeholder="Why this passage matters to you…"
+          />
+          <button
+            class="btn btn-outline-primary"
+            type="button"
+            :disabled="saving"
+            @click="onBookmark"
+          >
+            {{ saving ? 'Saving…' : 'Bookmark chapter' }}
+          </button>
+        </div>
+      </article>
+    </section>
+  </div>
 </template>
 
 <style scoped>
+.path-strip {
+  padding: 0.85rem 1rem;
+  border-left: 2px solid var(--bp-accent);
+  color: var(--bp-muted);
+  line-height: 1.45;
+}
+
+.path-strip-link {
+  color: var(--bp-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.path-strip-link:hover {
+  color: var(--bp-accent-deep);
+  text-decoration: underline;
+}
+
+.reader-empty,
+.reader-hint {
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed var(--bp-border);
+  color: var(--bp-muted);
+  line-height: 1.45;
+}
+
+.reader-hint {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--bp-accent) 45%, var(--bp-border));
+  color: var(--bp-ink);
+}
+
+.reader-ready {
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--bp-border);
+}
+
+.reader-capture {
+  padding-top: 1rem;
+  border-top: 1px solid var(--bp-border);
+}
+
 .esv-audio-frame {
   width: 100%;
   height: 110px;

@@ -22,7 +22,7 @@ Job applications are a **side benefit**, not the finish line.
 
 ## Where we are (Aug 2026)
 
-**Local product is strong.** Reader, bookmarks (with note memoirs), Resources, Settings/themes/PWA, and a values-aligned church finder all work on `localhost:5173` + API `5068`.
+**Local product is strong and mission-clear.** Path (What & Why), gated Reader flow, bookmarks with memoirs, Resources, Settings/themes/PWA, and a values-aligned church finder all work on `localhost:5173` + API `5068`.
 
 **Next gate to “shareable product”:** Azure live URL, then screenshots / short demo.
 
@@ -37,22 +37,24 @@ Job applications are a **side benefit**, not the finish line.
 - [x] Themes (Faith / Scripture — Messiah Studios look)
 - [x] PWA installability (`vite-plugin-pwa`)
 - [x] Mobile polish on core screens
-- [x] Resources tab (study methodology, audio, external links)
+- [x] Resources tab (audio first; methodology behind “Show details”)
+- [x] **Path / What & Why** (mission, Acts 17, how the app is used)
+- [x] Reader UX gate: book + chapter → Read unlocks audio, notes, bookmark together
 - [x] System & Settings (appearance, health, optional logs)
 - [x] Diagnostics / log viewer (API + Settings)
 - [x] GitHub public repo
 - [x] Single-host publish path (Vue builds into API `wwwroot`)
-- [x] **Church finder — values filter** (Protestant / non-denom preferred; exclude Catholic, Eastern Orthodox, LDS, JW, etc.)
-- [x] **Church detail panel** (website, directions, seminary guidance, save)
-- [x] **Suggest a church** (persisted suggestions API)
-- [x] Overpass proxied via API with mirrors + retries (fixes 406 / busy 504s)
+- [x] Church finder — values filter, detail panel, directions, seminary guidance
+- [x] Suggest a church (persisted suggestions API)
+- [x] Overpass proxied via API with mirrors + retries
 
-### Now
-- [ ] Azure live URL (+ optional `bereans.messiahstudios.site`)
-- [ ] README screenshots + short demo video
-- [ ] Curate more church enrichment notes (website / seminary) for Phoenix West Valley favorites
+### Now (shareable)
+1. **Azure live URL** (+ optional `bereans.messiahstudios.site`) — see `docs/AZURE.md`
+2. **README screenshots + short demo video**
+3. Curate more church enrichment notes (website / seminary) for Phoenix West Valley favorites
 
-### Later
+### Later / explore
+- [ ] Follow-along word highlight while audio plays *(not feasible with the current ESV iframe player — would need owned audio + timings or a different playback approach)*
 - [ ] Simple auth / synced bookmarks across devices
 - [ ] SQL Server in production
 - [ ] Push notifications
@@ -64,7 +66,7 @@ Job applications are a **side benefit**, not the finish line.
 
 | Step | Outcome |
 |---|---|
-| **C. Azure** | Always-on public URL |
+| **C. Azure** | Always-on public URL you can share |
 | **D. Showcase packaging** | Screenshots, demo clip, polished README |
 
 Apply to jobs **after** C (or with a local demo video if Azure waits).

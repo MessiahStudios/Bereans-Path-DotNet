@@ -4,15 +4,10 @@ import L from 'leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import {
-  deleteSavedChurch,
-  findNearbyChurches,
-  listSavedChurches,
-  saveChurch,
-  suggestChurch,
-} from '../api'
-import { CHURCH_FIT_BLURB } from '../data/churchFit'
+import { deleteSavedChurch, findNearbyChurches, listSavedChurches, saveChurch, suggestChurch } from '../api'
+import { CHURCH_FIT_BLURB, CHURCH_FIT_BLURB_DETAIL } from '../data/churchFit'
 import { buildChurchDetails } from '../data/churchDetails'
+import { RouterLink } from 'vue-router'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -210,7 +205,11 @@ onBeforeUnmount(() => {
       <div>
         <h2 class="h4 mb-1">Church finder</h2>
         <p class="muted mb-1">Find Protestant and non-denominational churches near you.</p>
-        <p class="church-fit-blurb mb-0">{{ CHURCH_FIT_BLURB }}</p>
+        <p class="church-fit-blurb mb-1">{{ CHURCH_FIT_BLURB }}</p>
+        <p class="small muted mb-0">
+          {{ CHURCH_FIT_BLURB_DETAIL }}
+          <RouterLink to="/path">Why this matters →</RouterLink>
+        </p>
       </div>
       <div class="d-flex flex-wrap gap-2">
         <button class="btn btn-outline-primary" type="button" @click="showSuggest = !showSuggest">

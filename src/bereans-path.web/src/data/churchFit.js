@@ -234,4 +234,7 @@ export function filterAndRankChurches(churches, origin = null) {
 }
 
 export const CHURCH_FIT_BLURB =
-  'Bereans Path exists to help you find churches that treat Scripture as the final authority, examining the Word with the same care commended of the Bereans in Acts 17. We point users toward Protestant and non-denominational congregations committed to biblical authority, while excluding traditions such as Roman Catholic, Eastern Orthodox, LDS, Jehovah’s Witness, and similar groups whose doctrine rests on authorities beyond the closed canon of Scripture.'
+  'We point toward Protestant and non-denominational churches that treat Scripture as the final authority — the same care commended of the Bereans in Acts 17.'
+
+export const CHURCH_FIT_BLURB_DETAIL =
+  'Traditions that rest on authorities beyond the closed canon — including Roman Catholic, Eastern Orthodox, LDS, and Jehovah’s Witness — are set aside.'

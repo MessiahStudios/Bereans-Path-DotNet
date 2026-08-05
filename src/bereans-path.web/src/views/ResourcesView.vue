@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import ElevenLabsAudioCard from '../components/ElevenLabsAudioCard.vue'
 import {
   EXTERNAL_RESOURCES,
@@ -7,8 +8,10 @@ import {
   STUDY_SUMMARY,
   STUDY_TOPICS,
 } from '../data/resources'
+import { PATH_TAGLINE } from '../data/pathCopy'
 
 const openTopicId = ref(null)
+const showMethod = ref(false)
 
 function toggleTopic(id) {
   openTopicId.value = openTopicId.value === id ? null : id
@@ -19,8 +22,10 @@ function toggleTopic(id) {
   <div class="d-grid gap-3">
     <section class="panel">
       <h2 class="h4 mb-1">Resources</h2>
-      <p class="muted mb-0">
-        Guidance and audio for those newer to the faith — plus trusted study links.
+      <p class="muted mb-2">{{ PATH_TAGLINE }}</p>
+      <p class="mb-0">
+        Start with a clear word about Jesus. When you are ready, open the study approach behind Bereans Path —
+        <RouterLink to="/path">or read Why this app exists</RouterLink>.
       </p>
     </section>
 
@@ -40,33 +45,36 @@ function toggleTopic(id) {
     </section>
 
     <section class="panel">
-      <h3 class="h5 mb-1">Bible study methodology</h3>
-      <p class="muted mb-3">
-        A thoughtful approach that brings out a deep, clear, and practical understanding of Scripture.
-      </p>
-
-      <div class="d-grid gap-2 mb-3">
-        <article v-for="topic in STUDY_TOPICS" :key="topic.id" class="card-item topic-card">
-          <button class="topic-toggle" type="button" @click="toggleTopic(topic.id)">
-            <strong>{{ topic.title }}</strong>
-            <span>{{ openTopicId === topic.id ? '−' : '+' }}</span>
-          </button>
-          <div v-if="openTopicId === topic.id" class="topic-body">
-            <p><strong>What it is:</strong> {{ topic.what }}</p>
-            <p><strong>Why we use it:</strong> {{ topic.why }}</p>
-            <p class="mb-0"><strong>How it helps:</strong> {{ topic.help }}</p>
-          </div>
-        </article>
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+        <div>
+          <h3 class="h5 mb-1">Bible study methodology</h3>
+          <p class="muted mb-0">
+            Six steps that keep us under Scripture — clear, careful, and ready to share.
+          </p>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" type="button" @click="showMethod = !showMethod">
+          {{ showMethod ? 'Hide details' : 'Show details' }}
+        </button>
       </div>
 
-      <div class="summary-box">
-        <h4 class="h6 mb-2">Putting it all together</h4>
-        <ul class="mb-2">
-          <li v-for="line in STUDY_SUMMARY" :key="line">{{ line }}</li>
-        </ul>
-        <p class="muted mb-0">
-          Through these steps, we gain a grounded understanding of the Bible, learn how to live it out, and share it with others.
-        </p>
+      <ul class="method-summary mb-0">
+        <li v-for="line in STUDY_SUMMARY" :key="line">{{ line }}</li>
+      </ul>
+
+      <div v-if="showMethod" class="method-details mt-3">
+        <div class="d-grid gap-2">
+          <article v-for="topic in STUDY_TOPICS" :key="topic.id" class="card-item topic-card">
+            <button class="topic-toggle" type="button" @click="toggleTopic(topic.id)">
+              <strong>{{ topic.title }}</strong>
+              <span>{{ openTopicId === topic.id ? '−' : '+' }}</span>
+            </button>
+            <div v-if="openTopicId === topic.id" class="topic-body">
+              <p><strong>What it is:</strong> {{ topic.what }}</p>
+              <p><strong>Why we use it:</strong> {{ topic.why }}</p>
+              <p class="mb-0"><strong>How it helps:</strong> {{ topic.help }}</p>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -93,6 +101,13 @@ function toggleTopic(id) {
 </template>
 
 <style scoped>
+.method-summary {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: var(--bp-muted);
+  line-height: 1.55;
+}
+
 .topic-toggle {
   width: 100%;
   display: flex;
@@ -113,13 +128,6 @@ function toggleTopic(id) {
 
 .topic-body p {
   margin-bottom: 0.65rem;
-}
-
-.summary-box {
-  border: 1px solid var(--bp-border);
-  border-radius: 0.85rem;
-  padding: 1rem;
-  background: var(--bp-elevated);
 }
 
 .resource-link {
