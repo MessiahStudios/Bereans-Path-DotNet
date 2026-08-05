@@ -1,9 +1,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
 import { createBookmark, fetchPassage } from '../api'
 import { BIBLE_BOOKS, dailyVerseReference } from '../bible'
-import { PATH_TAGLINE } from '../data/pathCopy'
+import MissionStrip from '../components/MissionStrip.vue'
 
 const books = Object.keys(BIBLE_BOOKS)
 const book = ref('John')
@@ -125,10 +124,7 @@ async function onBookmark() {
 
 <template>
   <div class="d-grid gap-3">
-    <aside class="path-strip">
-      <p class="mb-1">{{ PATH_TAGLINE }}</p>
-      <RouterLink class="path-strip-link" to="/path">Why Bereans Path exists →</RouterLink>
-    </aside>
+    <MissionStrip />
 
     <section class="panel">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
@@ -213,24 +209,6 @@ async function onBookmark() {
 </template>
 
 <style scoped>
-.path-strip {
-  padding: 0.85rem 1rem;
-  border-left: 2px solid var(--bp-accent);
-  color: var(--bp-muted);
-  line-height: 1.45;
-}
-
-.path-strip-link {
-  color: var(--bp-accent);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.path-strip-link:hover {
-  color: var(--bp-accent-deep);
-  text-decoration: underline;
-}
-
 .reader-empty,
 .reader-hint {
   padding: 0.9rem 1rem;

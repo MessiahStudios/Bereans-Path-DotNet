@@ -37,8 +37,20 @@ az login
 az webapp deploy --resource-group <your-rg> --name bereans-path --src-path publish.zip --type zip
 ```
 
+## Startup (Linux)
+
+If the Azure welcome page appears after Zip Deploy, set **Startup Command** in Portal → Configuration → General settings:
+
+```text
+dotnet BereansPath.Api.dll
+```
+
+Oryx usually auto-detects `BereansPath.Api.runtimeconfig.json` after a successful zip deploy. Prefer Linux-safe zips (forward slashes in entries); Windows `Compress-Archive` can break Linux extract.
+
 ## Notes
 
-- Keep secrets in App Settings — never in git.
-- SQLite on App Service is fine for early product.
+- Keep secrets in App Settings — never in git. Never commit publish profiles.
+- If a publish profile password was pasted into chat or a ticket, **reset publishing credentials** in Azure Portal afterward.
+- SQLite on App Service is fine for early product (`/home/site/wwwroot`).
 - Custom domains require Basic+ (already upgraded).
+- GitHub Actions: add secret `AZURE_WEBAPP_PUBLISH_PROFILE` (full XML from Portal → Get publish profile).

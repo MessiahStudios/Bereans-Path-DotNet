@@ -22,7 +22,7 @@ public class ChurchesController(
     public async Task<IActionResult> Nearby(
         [FromQuery] double lat,
         [FromQuery] double lon,
-        [FromQuery] int radius = 30000,
+        [FromQuery] int radius = 16000,
         CancellationToken cancellationToken = default)
     {
         if (lat is < -90 or > 90 || lon is < -180 or > 180)
@@ -46,7 +46,7 @@ public class ChurchesController(
             logger.LogError(ex, "All Overpass endpoints failed");
             return StatusCode(StatusCodes.Status502BadGateway, new
             {
-                error = "Church map servers are busy right now. Please try Find near me again in a minute.",
+                error = ex.Message,
             });
         }
     }

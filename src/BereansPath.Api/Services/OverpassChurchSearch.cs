@@ -5,15 +5,18 @@ namespace BereansPath.Api.Services;
 
 public class OverpassChurchSearch(IHttpClientFactory httpClientFactory, ILogger<OverpassChurchSearch> logger)
 {
-    // Prefer mirrors that often stay up when the FOSSGIS pair is overloaded.
+    // Prefer FOSSGIS first; community mirrors often hang for a full HttpClient timeout.
     private static readonly string[] Endpoints =
     [
+        "https://z.overpass-api.de/api/interpreter",
+        "https://lz4.overpass-api.de/api/interpreter",
+        "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
         "https://overpass.private.coffee/api/interpreter",
-        "https://z.overpass-api.de/api/interpreter",
-        "https://overpass-api.de/api/interpreter",
-        "https://lz4.overpass-api.de/api/interpreter",
     ];
+
+    private static string? _lastGoodEndpoint;
+    private static readonly object LastGoodGate = new();
 
     public async Task<IReadOnlyList<OverpassChurch>> SearchAsync(
         double lat,
@@ -22,9 +25,11 @@ public class OverpassChurchSearch(IHttpClientFactory httpClientFactory, ILogger<
         CancellationToken cancellationToken)
     {
         var clamped = Math.Clamp(radiusMeters, 1000, 50000);
-        // Keep the query light: nodes + ways only (relations are rare for local churches).
+        var qlTimeoutSec = clamped <= 10000 ? 15 : clamped <= 20000 ? 18 : 22;
+        var perAttempt = TimeSpan.FromSeconds(qlTimeoutSec + 4);
+
         var query = $"""
-            [out:json][timeout:60];
+            [out:json][timeout:{qlTimeoutSec}];
             (
               node["amenity"="place_of_worship"]["religion"="christian"](around:{clamped},{lat},{lon});
               way["amenity"="place_of_worship"]["religion"="christian"](around:{clamped},{lat},{lon});
@@ -32,72 +37,145 @@ public class OverpassChurchSearch(IHttpClientFactory httpClientFactory, ILogger<
             out center tags;
             """;
 
-        var client = httpClientFactory.CreateClient("Overpass");
+        // Two full passes — Overpass is bursty; a second pass often succeeds immediately.
         Exception? lastError = null;
+        for (var pass = 1; pass <= 2; pass++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            using var budgetCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            budgetCts.CancelAfter(TimeSpan.FromSeconds(35));
+
+            try
+            {
+                var result = await SearchOnceAsync(
+                    query,
+                    perAttempt,
+                    budgetCts.Token,
+                    cancellationToken);
+                if (result is not null)
+                    return result;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                logger.LogWarning("Overpass search pass {Pass} hit the time budget", pass);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                lastError = ex;
+                logger.LogWarning(ex, "Overpass search pass {Pass} failed", pass);
+            }
+
+            if (pass < 2)
+                await Task.Delay(800, cancellationToken);
+        }
+
+        throw new OverpassUnavailableException(
+            "Church map servers are busy right now. Tap Find near me again in a moment.",
+            lastError);
+    }
+
+    private async Task<IReadOnlyList<OverpassChurch>?> SearchOnceAsync(
+        string query,
+        TimeSpan perAttempt,
+        CancellationToken budgetToken,
+        CancellationToken requestToken)
+    {
+        var client = httpClientFactory.CreateClient("Overpass");
+        foreach (var endpoint in OrderedEndpoints())
+        {
+            requestToken.ThrowIfCancellationRequested();
+            if (budgetToken.IsCancellationRequested)
+                return null;
+
+            var parsed = await QueryEndpointAsync(client, endpoint, query, perAttempt, budgetToken);
+            if (parsed is null)
+                continue;
+
+            lock (LastGoodGate)
+                _lastGoodEndpoint = endpoint;
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> OrderedEndpoints()
+    {
+        string? lastGood;
+        lock (LastGoodGate)
+            lastGood = _lastGoodEndpoint;
+
+        if (!string.IsNullOrEmpty(lastGood))
+            yield return lastGood;
 
         foreach (var endpoint in Endpoints)
         {
-            for (var attempt = 1; attempt <= 2; attempt++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                try
-                {
-                    using var content = new FormUrlEncodedContent(new Dictionary<string, string>
-                    {
-                        ["data"] = query,
-                    });
-
-                    using var response = await client.PostAsync(endpoint, content, cancellationToken);
-                    var body = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                    if (response.StatusCode is HttpStatusCode.GatewayTimeout
-                        or HttpStatusCode.ServiceUnavailable
-                        or HttpStatusCode.TooManyRequests
-                        or (HttpStatusCode)504
-                        or (HttpStatusCode)429)
-                    {
-                        logger.LogWarning(
-                            "Overpass {Endpoint} attempt {Attempt} returned {Status}",
-                            endpoint,
-                            attempt,
-                            (int)response.StatusCode);
-                        await Task.Delay(TimeSpan.FromSeconds(attempt), cancellationToken);
-                        continue;
-                    }
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        logger.LogWarning(
-                            "Overpass {Endpoint} returned {Status}: {Snippet}",
-                            endpoint,
-                            (int)response.StatusCode,
-                            body.Length > 180 ? body[..180] : body);
-                        break; // try next endpoint
-                    }
-
-                    var parsed = ParseChurches(body);
-                    logger.LogInformation(
-                        "Overpass {Endpoint} returned {Count} churches",
-                        endpoint,
-                        parsed.Count);
-                    return parsed;
-                }
-                catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-                {
-                    lastError = ex;
-                    logger.LogWarning("Overpass {Endpoint} timed out (attempt {Attempt})", endpoint, attempt);
-                    await Task.Delay(TimeSpan.FromSeconds(attempt), cancellationToken);
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    lastError = ex;
-                    logger.LogWarning(ex, "Overpass {Endpoint} failed (attempt {Attempt})", endpoint, attempt);
-                    await Task.Delay(TimeSpan.FromSeconds(attempt), cancellationToken);
-                }
-            }
+            if (!string.Equals(endpoint, lastGood, StringComparison.Ordinal))
+                yield return endpoint;
         }
+    }
 
-        throw new OverpassUnavailableException("All Overpass endpoints failed.", lastError);
+    private async Task<IReadOnlyList<OverpassChurch>?> QueryEndpointAsync(
+        HttpClient client,
+        string endpoint,
+        string query,
+        TimeSpan perAttempt,
+        CancellationToken outerToken)
+    {
+        using var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(outerToken);
+        attemptCts.CancelAfter(perAttempt);
+        var token = attemptCts.Token;
+
+        try
+        {
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["data"] = query,
+            });
+
+            using var response = await client.PostAsync(endpoint, content, token);
+            var body = await response.Content.ReadAsStringAsync(token);
+
+            if (response.StatusCode is HttpStatusCode.GatewayTimeout
+                or HttpStatusCode.ServiceUnavailable
+                or HttpStatusCode.TooManyRequests
+                or (HttpStatusCode)504
+                or (HttpStatusCode)429)
+            {
+                logger.LogWarning(
+                    "Overpass {Endpoint} returned {Status}",
+                    endpoint,
+                    (int)response.StatusCode);
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning(
+                    "Overpass {Endpoint} returned {Status}: {Snippet}",
+                    endpoint,
+                    (int)response.StatusCode,
+                    body.Length > 180 ? body[..180] : body);
+                return null;
+            }
+
+            var parsed = ParseChurches(body);
+            logger.LogInformation(
+                "Overpass {Endpoint} returned {Count} churches",
+                endpoint,
+                parsed.Count);
+            return parsed;
+        }
+        catch (OperationCanceledException) when (!outerToken.IsCancellationRequested)
+        {
+            logger.LogWarning("Overpass {Endpoint} timed out after {Seconds}s", endpoint, perAttempt.TotalSeconds);
+            return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogWarning(ex, "Overpass {Endpoint} request failed", endpoint);
+            return null;
+        }
     }
 
     private static List<OverpassChurch> ParseChurches(string body)

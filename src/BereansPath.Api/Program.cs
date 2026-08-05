@@ -41,7 +41,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddHttpClient("Overpass", client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(75);
+    // Per-attempt cancel is shorter; this is only a hard safety net.
+    client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.UserAgent.ParseAdd(
         "BereansPath/1.0 (https://github.com/MessiahStudios/Bereans-Path-DotNet; church finder)");
     client.DefaultRequestHeaders.Accept.ParseAdd("application/json");

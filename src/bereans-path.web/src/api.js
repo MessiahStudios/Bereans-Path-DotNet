@@ -63,7 +63,10 @@ export function deleteBookmark(id) {
   return request(`/api/bookmarks/${id}`, { method: 'DELETE' })
 }
 
-export async function findNearbyChurches(lat, lon, radiusMeters = 30000) {
+/** Default ~10 miles — shorter radius usually returns sooner from Overpass. */
+export const DEFAULT_CHURCH_RADIUS_METERS = 16000
+
+export async function findNearbyChurches(lat, lon, radiusMeters = DEFAULT_CHURCH_RADIUS_METERS) {
   // Proxied through our API — Overpass often returns 406 to direct browser calls.
   const clamped = Math.min(50000, Math.max(1000, radiusMeters))
   const params = new URLSearchParams({
@@ -75,14 +78,20 @@ export async function findNearbyChurches(lat, lon, radiusMeters = 30000) {
 
   let lastError
   for (let attempt = 1; attempt <= 2; attempt++) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 80000)
     try {
-      const results = await request(path)
+      const results = await request(path, { signal: controller.signal })
       return filterAndRankChurches(Array.isArray(results) ? results : [], { lat, lon })
     } catch (err) {
-      lastError = err
+      lastError = err?.name === 'AbortError'
+        ? new Error('Church search timed out. Tap Find near me again in a moment.')
+        : err
       if (attempt < 2) {
-        await new Promise((resolve) => setTimeout(resolve, 1500 * attempt))
+        await new Promise((resolve) => setTimeout(resolve, 1200))
       }
+    } finally {
+      clearTimeout(timer)
     }
   }
   throw lastError

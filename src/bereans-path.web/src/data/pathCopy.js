@@ -6,6 +6,10 @@ export const APP_PUBLIC_URL = 'https://bereans.messiahstudios.site'
 
 export const PATH_TAGLINE = 'Searching the Scriptures daily to find the truth.'
 
+/** Shown on first paint so visitors know what the app is without opening Path. */
+export const PATH_ONE_LINER =
+  'Bereans Path is a Scripture reader, bookmark journal, and church finder for Protestant and non-denominational congregations that treat the Bible as the final authority.'
+
 export const PATH_PROBLEM =
   'It is easy to read the Bible alone, or to find a church that calls itself Christian, without ever asking whether Scripture is truly the final authority.'
 

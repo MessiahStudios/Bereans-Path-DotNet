@@ -50,6 +50,9 @@ export const NEW_BELIEVER_AUDIO = [
     description: 'A short audio introduction for those newer to the faith.',
     publicUserId: 'ac62d633f670f2f0f66adbdddcf061fe4a627dea0835bd5038d2e30f6d2f5eae',
     projectId: 'QUtczsXsJI2ys77Vw9Zg',
+    // Direct CDN URL — used for church-search wait autoplay (iframe cannot autoplay).
+    audioUrl:
+      'https://eleven-public-cdn.elevenlabs.io/audio-native/ac62d633f670f2f0f66adbdddcf061fe4a627dea0835bd5038d2e30f6d2f5eae/QUtczsXsJI2ys77Vw9Zg/OlkjgBqu4SZGwF9sN25P.mp3',
   },
   {
     id: 'why-jesus-matters',
@@ -57,6 +60,8 @@ export const NEW_BELIEVER_AUDIO = [
     description: 'Why Jesus matters for life, hope, and following Him.',
     publicUserId: 'ac62d633f670f2f0f66adbdddcf061fe4a627dea0835bd5038d2e30f6d2f5eae',
     projectId: 'jSQPndRRrHdNFgSkE3OU',
+    audioUrl:
+      'https://eleven-public-cdn.elevenlabs.io/audio-native/ac62d633f670f2f0f66adbdddcf061fe4a627dea0835bd5038d2e30f6d2f5eae/jSQPndRRrHdNFgSkE3OU/U1cVzomzULMr5G8jUOGw.mp3',
   },
 ]
 
