@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Bookmark> Bookmarks => Set<Bookmark>();
     public DbSet<SavedChurch> SavedChurches => Set<SavedChurch>();
     public DbSet<BookmarkNoteMemoir> BookmarkNoteMemoirs => Set<BookmarkNoteMemoir>();
+    public DbSet<ChurchSuggestion> ChurchSuggestions => Set<ChurchSuggestion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +33,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.Property(c => c.Name).HasMaxLength(300).IsRequired();
             entity.Property(c => c.OsmId).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<ChurchSuggestion>(entity =>
+        {
+            entity.Property(c => c.Name).HasMaxLength(300).IsRequired();
+            entity.Property(c => c.City).HasMaxLength(200);
+            entity.Property(c => c.Website).HasMaxLength(500);
+            entity.Property(c => c.Denomination).HasMaxLength(120);
+            entity.Property(c => c.Reason).HasMaxLength(2000).IsRequired();
+            entity.Property(c => c.ContactEmail).HasMaxLength(200);
         });
 
         modelBuilder.Entity<Bookmark>().HasData(

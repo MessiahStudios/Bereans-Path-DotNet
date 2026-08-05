@@ -1,3 +1,5 @@
+import { filterAndRankChurches } from './data/churchFit.js'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 async function request(path, options = {}) {
@@ -61,44 +63,29 @@ export function deleteBookmark(id) {
   return request(`/api/bookmarks/${id}`, { method: 'DELETE' })
 }
 
-export async function findNearbyChurches(lat, lon, radiusMeters = 50000) {
-  // Public Overpass API — no secret key (matches original Flask Bereans Path).
+export async function findNearbyChurches(lat, lon, radiusMeters = 30000) {
+  // Proxied through our API — Overpass often returns 406 to direct browser calls.
   const clamped = Math.min(50000, Math.max(1000, radiusMeters))
-  const query = `
-    [out:json][timeout:25];
-    (
-      node["amenity"="place_of_worship"]["religion"="christian"](around:${clamped},${lat},${lon});
-      way["amenity"="place_of_worship"]["religion"="christian"](around:${clamped},${lat},${lon});
-      relation["amenity"="place_of_worship"]["religion"="christian"](around:${clamped},${lat},${lon});
-    );
-    out center;
-  `
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lon),
+    radius: String(clamped),
+  })
+  const path = `/api/churches/nearby?${params.toString()}`
 
-  const response = await fetch(
-    `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
-  )
-
-  if (!response.ok) {
-    throw new Error('Church search provider failed. Try again in a moment.')
+  let lastError
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const results = await request(path)
+      return filterAndRankChurches(Array.isArray(results) ? results : [], { lat, lon })
+    } catch (err) {
+      lastError = err
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * attempt))
+      }
+    }
   }
-
-  const data = await response.json()
-  const results = []
-
-  for (const element of data.elements ?? []) {
-    const latitude = element.lat ?? element.center?.lat
-    const longitude = element.lon ?? element.center?.lon
-    if (latitude == null || longitude == null) continue
-
-    results.push({
-      name: element.tags?.name || 'Church',
-      latitude,
-      longitude,
-      osmId: `${element.type}/${element.id}`,
-    })
-  }
-
-  return results
+  throw lastError
 }
 
 export function listSavedChurches() {
@@ -114,6 +101,17 @@ export function saveChurch(payload) {
 
 export function deleteSavedChurch(id) {
   return request(`/api/churches/saved/${id}`, { method: 'DELETE' })
+}
+
+export function suggestChurch(payload) {
+  return request('/api/churches/suggestions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function listChurchSuggestions() {
+  return request('/api/churches/suggestions')
 }
 
 export function fetchHealth() {

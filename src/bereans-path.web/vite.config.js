@@ -29,11 +29,16 @@ export default defineConfig({
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
+            // Church search can take 15–60s while Overpass mirrors recover.
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/churches/nearby'),
+            handler: 'NetworkOnly',
+          },
+          {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'bereans-api',
-              networkTimeoutSeconds: 8,
+              networkTimeoutSeconds: 60,
             },
           },
         ],

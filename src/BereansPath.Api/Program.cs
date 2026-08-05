@@ -1,5 +1,6 @@
 using BereansPath.Api.Data;
 using BereansPath.Api.Diagnostics;
+using BereansPath.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,15 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
+builder.Services.AddHttpClient("Overpass", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(75);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(
+        "BereansPath/1.0 (https://github.com/MessiahStudios/Bereans-Path-DotNet; church finder)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddSingleton<OverpassChurchSearch>();
+
 var app = builder.Build();
 
 logStore.Write("INFO", "Startup", $"Bereans Path API starting ({app.Environment.EnvironmentName})");
@@ -67,7 +77,21 @@ using (var scope = app.Services.CreateScope())
         CREATE INDEX IF NOT EXISTS "IX_BookmarkNoteMemoirs_BookmarkId"
         ON "BookmarkNoteMemoirs" ("BookmarkId");
         """);
-    logStore.Write("INFO", "Startup", "Database ready (including note memoirs)");
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "ChurchSuggestions" (
+            "Id" INTEGER NOT NULL CONSTRAINT "PK_ChurchSuggestions" PRIMARY KEY AUTOINCREMENT,
+            "Name" TEXT NOT NULL,
+            "City" TEXT NULL,
+            "Website" TEXT NULL,
+            "Denomination" TEXT NULL,
+            "Reason" TEXT NOT NULL,
+            "ContactEmail" TEXT NULL,
+            "Latitude" REAL NULL,
+            "Longitude" REAL NULL,
+            "CreatedAt" TEXT NOT NULL
+        );
+        """);
+    logStore.Write("INFO", "Startup", "Database ready (including note memoirs and church suggestions)");
 }
 
 if (app.Environment.IsDevelopment())

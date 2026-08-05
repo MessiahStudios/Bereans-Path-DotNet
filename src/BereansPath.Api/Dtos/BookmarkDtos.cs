@@ -44,3 +44,30 @@ public class CreateSavedChurchRequest
     [MaxLength(100)]
     public string? OsmId { get; set; }
 }
+
+public class CreateChurchSuggestionRequest
+{
+    [Required, MaxLength(300)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(200)]
+    public string? City { get; set; }
+
+    [MaxLength(500)]
+    public string? Website { get; set; }
+
+    [MaxLength(120)]
+    public string? Denomination { get; set; }
+
+    [Required, MaxLength(2000)]
+    public string Reason { get; set; } = string.Empty;
+
+    [EmailAddress, MaxLength(200)]
+    public string? ContactEmail { get; set; }
+
+    [Range(-90, 90)]
+    public double? Latitude { get; set; }
+
+    [Range(-180, 180)]
+    public double? Longitude { get; set; }
+}
