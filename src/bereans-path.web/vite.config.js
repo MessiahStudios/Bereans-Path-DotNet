@@ -7,21 +7,27 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons.svg'],
+      includeAssets: ['favicon.svg', 'icons.svg', 'bereans-path-logo.png'],
       manifest: {
         name: 'Bereans Path',
         short_name: 'Bereans',
-        description: 'Scripture reading, bookmarks, and nearby church finder',
+        description: 'Searching the Scriptures daily to find the truth. Acts 17:11',
         theme_color: '#c4a574',
         background_color: '#0c0b0a',
         display: 'standalone',
         start_url: '/',
         icons: [
           {
-            src: 'favicon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
+            src: 'bereans-path-logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'bereans-path-logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

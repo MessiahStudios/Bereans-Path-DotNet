@@ -7,6 +7,8 @@ import {
   PATH_PROBLEM,
   PATH_SOLUTION,
   PATH_TAGLINE,
+  MAIN_SITE_LABEL,
+  MAIN_SITE_URL,
 } from '../data/pathCopy'
 </script>
 
@@ -43,6 +45,9 @@ import {
         <RouterLink class="btn btn-primary" to="/churches">Find churches</RouterLink>
         <RouterLink class="btn btn-outline-primary" to="/resources">Study resources</RouterLink>
         <RouterLink class="btn btn-outline-secondary" to="/">Open the reader</RouterLink>
+        <a class="btn btn-outline-secondary" :href="MAIN_SITE_URL">
+          ← {{ MAIN_SITE_LABEL }}
+        </a>
       </div>
     </section>
   </div>

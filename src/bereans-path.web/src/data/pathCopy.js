@@ -1,6 +1,10 @@
 /** Shared mission copy for Path / About surfaces. */
 
-export const PATH_TAGLINE = 'Stay rooted in Scripture. Walk with a church that does the same.'
+export const MAIN_SITE_URL = 'https://messiahstudios.site'
+export const MAIN_SITE_LABEL = 'Messiah Studios'
+export const APP_PUBLIC_URL = 'https://bereans.messiahstudios.site'
+
+export const PATH_TAGLINE = 'Searching the Scriptures daily to find the truth.'
 
 export const PATH_PROBLEM =
   'It is easy to read the Bible alone, or to find a church that calls itself Christian, without ever asking whether Scripture is truly the final authority.'

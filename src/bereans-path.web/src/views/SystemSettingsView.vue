@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { THEMES, applyTheme, getSavedTheme } from '../themes'
 import { clearLogs, fetchHealth, fetchLogs } from '../api'
+import { MAIN_SITE_LABEL, MAIN_SITE_URL } from '../data/pathCopy'
 
 const LOGS_VISIBLE_KEY = 'bereans-show-logs'
 const AUTO_REFRESH_KEY = 'bereans-logs-auto-refresh'
@@ -184,7 +185,10 @@ onUnmounted(() => {
     <section class="panel">
       <h3 class="h5 mb-2">About</h3>
       <p class="mb-1">Bereans Path — stay rooted in Scripture and walk with a church that does the same.</p>
-      <p class="muted mb-0">Built by Messiah Studios · Vue 3 + ASP.NET Core</p>
+      <p class="muted mb-2">Built by Messiah Studios · Vue 3 + ASP.NET Core</p>
+      <a class="btn btn-outline-secondary btn-sm" :href="MAIN_SITE_URL">
+        ← Back to {{ MAIN_SITE_LABEL }}
+      </a>
     </section>
   </div>
 </template>

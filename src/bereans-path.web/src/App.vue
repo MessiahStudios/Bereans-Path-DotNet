@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import ThemeSwitcher from './components/ThemeSwitcher.vue'
+import { MAIN_SITE_LABEL, MAIN_SITE_URL } from './data/pathCopy'
 
 const route = useRoute()
 
@@ -19,11 +20,19 @@ const settingsActive = computed(() => route.path === '/settings')
 <template>
   <div class="app-shell">
     <header class="app-header">
-      <div>
-        <RouterLink to="/" class="brand-link">
-          <h1 class="brand-mark h3">Bereans <span>Path</span></h1>
+      <div class="brand-block">
+        <a class="home-link" :href="MAIN_SITE_URL">
+          ← {{ MAIN_SITE_LABEL }}
+        </a>
+        <RouterLink to="/" class="brand-link" aria-label="Bereans Path home">
+          <img
+            class="brand-logo"
+            src="/bereans-path-logo.png"
+            alt="Bereans Path — Searching the Scriptures daily to find the truth. Acts 17:11"
+            width="220"
+            height="220"
+          />
         </RouterLink>
-        <p class="muted mb-0 brand-tagline">Stay rooted in Scripture. Walk with a church that does the same.</p>
       </div>
       <div class="header-actions">
         <ThemeSwitcher />
@@ -53,6 +62,14 @@ const settingsActive = computed(() => route.path === '/settings')
 
     <RouterView />
 
+    <footer class="app-footer">
+      <a :href="MAIN_SITE_URL">
+        ← Back to {{ MAIN_SITE_LABEL }}
+      </a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <span>Bereans Path</span>
+    </footer>
+
     <nav class="mobile-nav" aria-label="Primary">
       <RouterLink
         v-for="link in primaryLinks"
@@ -70,12 +87,73 @@ const settingsActive = computed(() => route.path === '/settings')
 </template>
 
 <style scoped>
-.brand-tagline {
-  max-width: 22rem;
-  line-height: 1.35;
+.brand-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.home-link {
+  display: inline-block;
+  color: var(--bp-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: var(--bp-accent);
+}
+
+.brand-link {
+  display: inline-block;
+  text-decoration: none;
+  line-height: 0;
+}
+
+.brand-logo {
+  display: block;
+  width: min(210px, 52vw);
+  height: auto;
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(196, 165, 116, 0.28);
 }
 
 .settings-link:not(.active) {
   opacity: 0.72;
+}
+
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+  padding: 0.85rem 0 0.25rem;
+  border-top: 1px solid var(--bp-border);
+  color: var(--bp-muted);
+  font-size: 0.9rem;
+}
+
+.app-footer a {
+  color: var(--bp-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+.footer-sep {
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .brand-logo {
+    width: min(150px, 46vw);
+  }
 }
 </style>
