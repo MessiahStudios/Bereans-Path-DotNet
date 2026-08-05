@@ -49,7 +49,7 @@ Must work:
 - [x] Save / list / delete bookmarks (EF + SQL Server)
 - [x] Church finder (map + nearby search)
 - [x] Vue UI calling the API (CORS configured)
-- [ ] Public GitHub repo with README (setup, screenshots, architecture)
+- [x] Public GitHub repo with README (setup, screenshots, architecture)
 - [x] No secrets in git
 
 Nice to have (after v1):
@@ -81,10 +81,10 @@ Out of scope for v1:
 - [x] Add EF Core + SQL Server packages
 - [x] Solution file / folder layout
 - [x] `.gitignore` (bin, obj, node_modules, user secrets, `.env`, `appsettings.Development.json` if it has secrets)
-- [ ] Create **GitHub** repo → first push (scaffold + this `ROADMAP.md`)
+- [x] Create **GitHub** repo → first push (scaffold + this `ROADMAP.md`)
 - [x] Document local run commands in README stub
 
-**GitHub:** do it here.  
+**GitHub:** done — https://github.com/MessiahStudios/Bereans-Path-DotNet  
 **Azure:** skip.
 
 ### Phase 2 — Backend core (Day 1–2)
