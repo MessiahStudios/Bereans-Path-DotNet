@@ -1,0 +1,71 @@
+:root {
+  --bp-ink: #1c2a3a;
+  --bp-paper: #f7f3ec;
+  --bp-accent: #c45c26;
+  --bp-accent-deep: #9a3f14;
+  --bp-sea: #2f5d7c;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--bp-ink);
+  background:
+    radial-gradient(circle at top left, rgba(196, 92, 38, 0.12), transparent 35%),
+    linear-gradient(160deg, #f7f3ec 0%, #eef3f7 55%, #e7edf2 100%);
+  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+}
+
+.app-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+.brand-mark {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--bp-sea);
+}
+
+.brand-mark span {
+  color: var(--bp-accent);
+}
+
+.nav-pills .nav-link {
+  color: var(--bp-ink);
+}
+
+.nav-pills .nav-link.active {
+  background: var(--bp-accent);
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(28, 42, 58, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(28, 42, 58, 0.06);
+  padding: 1.25rem;
+}
+
+.passage-text {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.map-frame {
+  height: 420px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(28, 42, 58, 0.1);
+}
+
+.muted {
+  color: rgba(28, 42, 58, 0.65);
+}
