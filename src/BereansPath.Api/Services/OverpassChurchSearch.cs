@@ -219,6 +219,13 @@ public class OverpassChurchSearch(IHttpClientFactory httpClientFactory, ILogger<
 
                 if (tagMap.TryGetValue("name", out var n) && !string.IsNullOrWhiteSpace(n))
                     name = n;
+                else if (tagMap.TryGetValue("official_name", out var official) && !string.IsNullOrWhiteSpace(official))
+                    name = official;
+                else if (tagMap.TryGetValue("alt_name", out var alt) && !string.IsNullOrWhiteSpace(alt))
+                    name = alt;
+                else
+                    name = "Church"; // OSM often omits name — UI explains this.
+
                 if (tagMap.TryGetValue("denomination", out var d))
                     denomination = d;
             }

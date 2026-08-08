@@ -37,6 +37,8 @@ export function fetchPassage(reference) {
     'include-footnotes': 'false',
     'include-headings': 'false',
     'include-passage-references': 'false',
+    // Required for free ESV API use — appends "(ESV)" to the text.
+    'include-short-copyright': 'true',
   })
   return request(`/api/esv?${params.toString()}`)
 }

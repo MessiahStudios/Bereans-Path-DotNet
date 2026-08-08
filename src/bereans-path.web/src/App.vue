@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import ThemeSwitcher from './components/ThemeSwitcher.vue'
 import { MAIN_SITE_LABEL, MAIN_SITE_URL } from './data/pathCopy'
+import { ESV_SITE_URL } from './data/esvCopy'
 
 const route = useRoute()
 
@@ -68,6 +69,8 @@ const settingsActive = computed(() => route.path === '/settings')
       </a>
       <span class="footer-sep" aria-hidden="true">·</span>
       <span>Bereans Path</span>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <a :href="ESV_SITE_URL" target="_blank" rel="noopener noreferrer">Scripture from ESV</a>
     </footer>
 
     <nav class="mobile-nav" aria-label="Primary">

@@ -238,3 +238,12 @@ export const CHURCH_FIT_BLURB =
 
 export const CHURCH_FIT_BLURB_DETAIL =
   'Traditions that rest on authorities beyond the closed canon — including Roman Catholic, Eastern Orthodox, LDS, and Jehovah’s Witness — are set aside.'
+
+/** Shown near results — OSM often lacks a proper name. */
+export const CHURCH_DATA_DISCLAIMER =
+  'Church names and details come from OpenStreetMap community data. Some places only appear as “Church” when a public name was never added. Use Suggest a church if you know a better name, or check the map pin and website before visiting.'
+
+export function isGenericChurchName(name) {
+  const n = (name || '').trim().toLowerCase()
+  return !n || n === 'church' || n === 'place of worship' || n === 'christian'
+}

@@ -5,7 +5,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { deleteSavedChurch, findNearbyChurches, listSavedChurches, saveChurch, suggestChurch } from '../api'
-import { CHURCH_FIT_BLURB, CHURCH_FIT_BLURB_DETAIL } from '../data/churchFit'
+import { CHURCH_FIT_BLURB, CHURCH_FIT_BLURB_DETAIL, CHURCH_DATA_DISCLAIMER, isGenericChurchName } from '../data/churchFit'
 import { buildChurchDetails } from '../data/churchDetails'
 import { NEW_BELIEVER_AUDIO } from '../data/resources'
 import MissionStrip from '../components/MissionStrip.vue'
@@ -372,6 +372,7 @@ onBeforeUnmount(() => {
             {{ showFitDetail ? 'Hide who we set aside' : 'Who we set aside' }}
           </button>
           <p v-if="showFitDetail" class="small muted mb-0">{{ CHURCH_FIT_BLURB_DETAIL }}</p>
+          <p class="small muted church-data-note mb-0 mt-2">{{ CHURCH_DATA_DISCLAIMER }}</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
           <button class="btn btn-outline-primary" type="button" @click="showSuggest = !showSuggest">
@@ -491,7 +492,15 @@ onBeforeUnmount(() => {
       <div v-if="details" class="church-detail mb-3">
         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
           <div>
-            <h3 class="h5 mb-1">{{ details.name }}</h3>
+            <h3 class="h5 mb-1">
+              {{ details.name }}
+              <span v-if="isGenericChurchName(details.name)" class="generic-name-badge">Name incomplete</span>
+            </h3>
+            <p v-if="isGenericChurchName(details.name)" class="small muted mb-1">
+              OpenStreetMap has no public name for this place — only a generic “Church” label. Check the pin, website, or
+              <button class="btn btn-link btn-sm p-0 align-baseline" type="button" @click="showSuggest = true">Suggest a church</button>
+              with the correct name.
+            </p>
             <p class="small muted mb-0">
               <template v-if="details.distanceKm != null">{{ formatDistance(details.distanceKm) }}</template>
               <template v-if="details.distanceKm != null && details.denomination"> · </template>
@@ -576,7 +585,10 @@ onBeforeUnmount(() => {
               :class="{ active: selected?.osmId === church.osmId }"
             >
               <button class="item-list-main" type="button" @click="selectChurch(church)">
-                <span class="d-block">{{ church.name }}</span>
+                <span class="d-block">
+                  {{ church.name }}
+                  <span v-if="isGenericChurchName(church.name)" class="generic-name-badge">Name incomplete</span>
+                </span>
                 <span class="small muted">
                   <template v-if="church.distanceKm != null">{{ formatDistance(church.distanceKm) }}</template>
                   <template v-if="church.distanceKm != null && church.denomination"> · </template>
@@ -619,6 +631,25 @@ onBeforeUnmount(() => {
 .church-fit-toggle {
   color: var(--bp-accent, var(--bp-gold, #c4a574));
   text-decoration: none;
+}
+
+.church-data-note {
+  max-width: 42rem;
+  line-height: 1.45;
+}
+
+.generic-name-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted, #8a8178);
+  border: 1px solid var(--bp-border, rgba(196, 165, 116, 0.4));
+  vertical-align: middle;
 }
 
 .radius-row {
